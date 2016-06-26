@@ -1,9 +1,13 @@
 package xyz.phyoekhant.harthapadaythar.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
@@ -18,9 +22,12 @@ import android.widget.Toast;
 import xyz.phyoekhant.harthapadaythar.R;
 import xyz.phyoekhant.harthapadaythar.fragments.JokeFragment;
 import xyz.phyoekhant.harthapadaythar.utils.JokeTellerConstants;
+import xyz.phyoekhant.harthapadaythar.utils.MMFontUtils;
 
 public class MainActivity extends AppCompatActivity {
 
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
     private FrameLayout flContainer;
     private TextView tvSearchGuide;
     private Button btnPreviousJoke;
@@ -28,12 +35,36 @@ public class MainActivity extends AppCompatActivity {
 
     private int jokeIndex = -1;
 
+    private ShareActionProvider mShareActionProvider;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowTitleEnabled(false);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        navigationView = (NavigationView) findViewById(R.id.navigation_view);
+        Menu leftMenu = navigationView.getMenu();
+        MMFontUtils.applyMMFontToMenu(leftMenu);
+
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override public boolean onNavigationItemSelected(MenuItem menuItem) {
+                Snackbar.make(flContainer, menuItem.getTitle() + " pressed", Snackbar.LENGTH_LONG).show();
+                menuItem.setChecked(true);
+                drawerLayout.closeDrawers();
+                return true;
+            }
+        });
 
         tvSearchGuide = (TextView) findViewById(R.id.tv_search_jokes);
         flContainer = (FrameLayout) findViewById(R.id.fl_container);
@@ -107,6 +138,16 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        MenuItem shareItem = menu.findItem(R.id.action_share);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(createShareIntent());
+        } else {
+            Snackbar.make(flContainer, "ShareActionProvider is being null. Why ?", Snackbar.LENGTH_SHORT)
+                    .setAction("Action", null).show();
+        }
+
         return true;
     }
 
@@ -118,6 +159,9 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch(id) {
+            case android.R.id.home:
+                drawerLayout.openDrawer(GravityCompat.START);
+                return true;
             case R.id.action_settings:
                 return true;
             case R.id.action_love:
@@ -126,5 +170,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private static Intent createShareIntent(){
+        //explicit intent - want to started action by name defined
+        //new Intent(context, LoginSummeryActivities.class);
+
+        //inplicit intent - want to action by any possible
+        Intent myShareIntent = new Intent(Intent.ACTION_SEND);
+        myShareIntent.setType("text/*");
+        myShareIntent.putExtra(Intent.EXTRA_TEXT, "Hello Share Action Provider!");
+        return myShareIntent;
     }
 }
